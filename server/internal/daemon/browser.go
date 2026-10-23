@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strings"
 	"sync"
 	"time"
 
@@ -43,6 +44,12 @@ func (b *browserProcess) startLocked() error {
 		python = "python3"
 	}
 	cmd := exec.Command(python, "-u", "-c", browserSidecar)
+	for _, value := range os.Environ() {
+		if !strings.HasPrefix(value, "BROWSER_USE_CDP_HOST=") && !strings.HasPrefix(value, "BROWSER_USE_CDP_WS_URL=") {
+			cmd.Env = append(cmd.Env, value)
+		}
+	}
+	cmd.Env = append(cmd.Env, "BROWSER_USE_CDP_HOST=127.0.0.1")
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		return err

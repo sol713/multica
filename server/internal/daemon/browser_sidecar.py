@@ -5,6 +5,7 @@ import contextlib
 import json
 import logging
 from pathlib import Path
+import socket
 import sys
 import time
 import uuid
@@ -49,8 +50,14 @@ class BrowserBridge:
         settings.profiles_dir = Path.home() / ".multica" / "browser-profiles"
         settings.viewport_width = WIDTH
         settings.viewport_height = HEIGHT
+        manager = ProfileManager(settings=settings)
+        managed_profile = manager.get_or_create(profile)
+        # Never attach to an unrelated Chrome already listening on port 9222.
+        with socket.socket() as reservation:
+            reservation.bind(("127.0.0.1", 0))
+            managed_profile.cdp_port = reservation.getsockname()[1]
         return await BrowserSession.create(profile=profile, mode="headless", settings=settings,
-                                           profile_manager=ProfileManager(settings=settings))
+                                           profile_manager=manager)
 
     async def call(self, request):
         # Neither tool arguments nor UI input may select another profile or CDP endpoint.

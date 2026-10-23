@@ -1,5 +1,6 @@
 {
   "browser": {
+    "tab_key": "Tab",
     "title": "Browser",
     "user_control": "You’re in control",
     "agent_control": "Agent in control",

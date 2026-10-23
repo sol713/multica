@@ -1,5 +1,6 @@
 {
   "browser": {
+    "tab_key": "Tab",
     "title": "ブラウザー",
     "user_control": "あなたが操作中",
     "agent_control": "Agent が操作中",

@@ -100,7 +100,6 @@ export function ChatBrowserPanel({ wsId, sessionId, onClose }: { wsId: string; s
             <div className="w-full self-start">
               {state.frame ? (
                 // This is a live remote viewport, not a local navigation link.
-                // eslint-disable-next-line @next/next/no-img-element
                 <img src={`data:image/jpeg;base64,${state.frame}`} alt={t(($) => $.browser.viewport)} draggable={false} tabIndex={canControl ? 0 : -1}
                   className={`block h-auto w-full outline-none focus-visible:ring-2 focus-visible:ring-ring ${canControl ? "cursor-crosshair" : ""}`}
                   onClick={(event) => {
@@ -127,7 +126,7 @@ export function ChatBrowserPanel({ wsId, sessionId, onClose }: { wsId: string; s
             <form className="flex items-center gap-2" onSubmit={(event) => { event.preventDefault(); if (canControl && input) { void send("input", { kind: "text", text: input }).then((ok) => { if (ok) setInput(""); }); } }}>
               <Input aria-label={t(($) => $.browser.text_input)} placeholder={t(($) => $.browser.text_input)} value={input} onChange={(event) => setInput(event.target.value)} disabled={!canControl} maxLength={10000} />
               <Button variant="outline" size="sm" disabled={!canControl || !input}>{t(($) => $.browser.type_text)}</Button>
-              <Button type="button" variant="ghost" size="xs" disabled={!canControl} onClick={() => void send("input", { kind:"key", key:"Tab" })}>Tab</Button>
+              <Button type="button" variant="ghost" size="xs" disabled={!canControl} onClick={() => void send("input", { kind:"key", key:"Tab" })}>{t(($) => $.browser.tab_key)}</Button>
             </form>
           ) : <p className="text-caption text-muted-foreground">{t(($) => $.browser.observe)}</p>}
           <div className="mt-1 flex justify-end"><Button variant="ghost" size="xs" disabled={command.isPending} onClick={() => void send("close")}>{t(($) => $.browser.stop)}</Button></div>

@@ -26,7 +26,9 @@ describe("chat browser API compatibility", () => {
     vi.stubGlobal("fetch", fetchMock);
     const command = { action: "handoff" as const, params: { target: "user" }, epoch: 3 };
     await new ApiClient("https://api.test").sendChatBrowserCommand("chat-1", command);
-    expect(String(fetchMock.mock.calls[0][0])).toContain("/api/chat/sessions/chat-1/browser");
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual(command);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/api/chat/sessions/chat-1/browser"),
+      expect.objectContaining({ body: JSON.stringify(command) }),
+    );
   });
 });

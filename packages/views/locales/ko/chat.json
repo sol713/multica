@@ -1,5 +1,6 @@
 {
   "browser": {
+    "tab_key": "Tab",
     "title": "브라우저",
     "user_control": "내가 제어 중",
     "agent_control": "Agent가 제어 중",
