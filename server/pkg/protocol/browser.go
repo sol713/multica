@@ -16,6 +16,7 @@ type BrowserRequest struct {
 	Action      string          `json:"action"`
 	Params      json.RawMessage `json:"params,omitempty"`
 	Epoch       int             `json:"epoch,omitempty"`
+	ExpiresAt   int64           `json:"expires_at,omitempty"`
 }
 
 type BrowserResponse struct {

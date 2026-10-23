@@ -30,13 +30,13 @@ func TestBrowserMCPIsChatScopedAndOptional(t *testing.T) {
 		t.Fatal("task identity not bound")
 	}
 	for _, tc := range []struct{ path, method, want string }{
-		{h.path, "tools/list", "multica-browser"},
+		{h.path, "tools/list", `"name":"browser"`},
 		{h.path, "initialize", "protocolVersion"},
 	} {
 		request := httptest.NewRequest(http.MethodPost, tc.path, strings.NewReader(`{"jsonrpc":"2.0","id":1,"method":"`+tc.method+`"}`))
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, request)
-		if w.Code != 200 || !strings.Contains(w.Body.String(), tc.want) && tc.method != "tools/list" {
+		if w.Code != 200 || !strings.Contains(w.Body.String(), tc.want) {
 			t.Fatalf("response %d %s", w.Code, w.Body.String())
 		}
 		if !json.Valid(w.Body.Bytes()) {

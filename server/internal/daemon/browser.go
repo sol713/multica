@@ -22,12 +22,13 @@ import (
 var browserSidecar string
 
 type browserProcess struct {
-	mu      sync.Mutex
-	writeMu sync.Mutex
-	cmd     *exec.Cmd
-	stdin   io.WriteCloser
-	pending map[string]chan protocol.BrowserResponse
-	closed  bool
+	mu       sync.Mutex
+	writeMu  sync.Mutex
+	cmd      *exec.Cmd
+	stdin    io.WriteCloser
+	pending  map[string]chan protocol.BrowserResponse
+	closed   bool
+	requests browserRequestGuard
 }
 
 func browserEnabled() bool { return os.Getenv("MULTICA_BROWSER_ENABLED") == "1" }
@@ -104,6 +105,13 @@ func (b *browserProcess) Call(ctx context.Context, request protocol.BrowserReque
 	}
 	ctx, cancel := context.WithTimeout(ctx, 28*time.Second)
 	defer cancel()
+	if request.ExpiresAt != 0 {
+		var cancelDeadline context.CancelFunc
+		ctx, cancelDeadline = context.WithDeadline(ctx, time.UnixMilli(request.ExpiresAt))
+		defer cancelDeadline()
+	}
+	deadline, _ := ctx.Deadline()
+	request.ExpiresAt = deadline.UnixMilli()
 	request.ID = uuid.NewString()
 	body, _ := json.Marshal(struct {
 		protocol.BrowserRequest
@@ -160,9 +168,17 @@ func (d *Daemon) handleBrowserRequest(raw json.RawMessage) {
 	if d.findRuntime(request.RuntimeID) == nil {
 		return
 	}
+	accepted, claimErr := d.browser.requests.claim(request, time.Now())
+	if !accepted && claimErr == nil {
+		return
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	result, err := d.browser.Call(ctx, request, "user")
+	var result json.RawMessage
+	err := claimErr
+	if err == nil {
+		result, err = d.browser.Call(ctx, request, "user")
+	}
 	response := protocol.BrowserResponse{ID: request.ID, RuntimeID: request.RuntimeID, Result: result}
 	if err != nil {
 		response.Error = err.Error()

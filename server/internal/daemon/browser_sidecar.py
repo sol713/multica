@@ -81,6 +81,8 @@ class BrowserBridge:
                 raise ValueError("Browser session limit reached; close another browser first")
             state = self.sessions[key] = Session()
         async with state.lock:
+            if request.get("expires_at", 0) and request["expires_at"] <= time.time() * 1000:
+                raise ValueError("Browser request expired; refresh before interacting")
             state.touched = time.monotonic()
             if action == "close":
                 if state.browser:

@@ -43,6 +43,9 @@ func TestBrowserRelayRoundTrip(t *testing.T) {
 		_ = json.Unmarshal(raw, &message)
 		var request protocol.BrowserRequest
 		_ = json.Unmarshal(message.Payload, &request)
+		if request.ExpiresAt <= time.Now().UnixMilli() || request.ExpiresAt > time.Now().Add(32*time.Second).UnixMilli() {
+			t.Error("browser request must carry a bounded deadline")
+		}
 		_ = conn.WriteJSON(protocol.Message{Type: protocol.EventDaemonBrowserResponse, Payload: mustMarshalRaw(protocol.BrowserResponse{ID: request.ID, RuntimeID: request.RuntimeID, Result: json.RawMessage(`{"enabled":true}`)})})
 	}()
 	result, err := hub.CallBrowser(ctx, protocol.BrowserRequest{RuntimeID: "runtime-1", Action: "snapshot"})

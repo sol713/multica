@@ -35,6 +35,8 @@ func (h *Hub) CallBrowser(ctx context.Context, request protocol.BrowserRequest) 
 	ctx, cancel := context.WithTimeout(ctx, 32*time.Second)
 	defer cancel()
 	request.ID = uuid.NewString()
+	deadline, _ := ctx.Deadline()
+	request.ExpiresAt = deadline.UnixMilli()
 	ch := make(chan protocol.BrowserResponse, 1)
 	h.mu.Lock()
 	if len(h.browserPending) >= 128 {
