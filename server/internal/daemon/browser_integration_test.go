@@ -42,7 +42,10 @@ func TestBrowserLocalChromiumIntegration(t *testing.T) {
 	workspace, chat, other := uuid.NewString(), uuid.NewString(), uuid.NewString()
 	call := func(session, action, actor string, params map[string]any, epoch int) json.RawMessage {
 		t.Helper()
-		raw, _ := json.Marshal(params)
+		var raw json.RawMessage
+		if params != nil {
+			raw, _ = json.Marshal(params)
+		}
 		result, err := browser.Call(context.Background(), protocol.BrowserRequest{WorkspaceID: workspace, SessionID: session, Action: action, Params: raw, Epoch: epoch}, actor)
 		if err != nil {
 			t.Fatalf("%s %s: %v", actor, action, err)

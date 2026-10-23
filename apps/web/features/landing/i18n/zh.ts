@@ -73,7 +73,7 @@ export function createZhDict(
         {
           title: "\u5b9e\u65f6\u8fdb\u5ea6\u63a8\u9001",
           description:
-            "\u57fa\u4e8e WebSocket \u7684\u5b9e\u65f6\u66f4\u65b0\u3002\u5b9e\u65f6\u89c2\u770b 智能体 \u5de5\u4f5c\uff0c\u6216\u968f\u65f6\u67e5\u770b\u2014\u2014\u65f6\u95f4\u7ebf\u59cb\u7ec8\u662f\u6700\u65b0\u7684\u3002",
+            "基于 WebSocket 实时更新进度。在对话中启用 Octop Browser，查看 daemon 机器上的浏览器，随时接管并交还给智能体。",
         },
       ],
     },

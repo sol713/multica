@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/multica-ai/multica/server/internal/testutil"
@@ -10,7 +11,7 @@ import (
 
 func TestBrowserChatAuthorization(t *testing.T) {
 	agentID := createHandlerTestAgent(t, "BrowserAuthorizationAgent", []byte("[]"))
-	sessionID := createHandlerTestChatSession(t, agentID)
+	sessionID := dbfx.ChatSession(t, agentID, testutil.Cols{"explicitly_created_at": time.Now()})
 	for _, tc := range []struct {
 		name, user, session string
 		want                int

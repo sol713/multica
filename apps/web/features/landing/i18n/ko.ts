@@ -75,7 +75,7 @@ export function createKoDict(
           {
             title: "실시간 진행 상황",
             description:
-              "WebSocket 기반 업데이트로 작업 상황이 즉시 반영됩니다. 실시간으로 지켜봐도 좋고, 나중에 들어와 최신 타임라인만 훑어 봐도 좋습니다.",
+              "WebSocket으로 진행 상황을 실시간 업데이트합니다. 채팅에서 Octop Browser를 켜면 데몬의 브라우저를 보면서 직접 조작하고 에이전트에게 제어권을 돌려줄 수 있습니다.",
           },
         ],
       },
