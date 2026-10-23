@@ -18,6 +18,9 @@ type RelayNotifier struct {
 }
 
 func NewRelayNotifier(local *Hub, relay realtime.RelayPublisher) *RelayNotifier {
+	if local != nil {
+		local.setBrowserRelay(relay)
+	}
 	return &RelayNotifier{local: local, relay: relay}
 }
 

@@ -395,6 +395,8 @@ func (d *Daemon) readTaskWakeupMessagesForConnection(conn *websocket.Conn, taskW
 			continue
 		}
 		switch msg.Type {
+		case protocol.EventDaemonBrowserRequest:
+			go d.handleBrowserRequest(msg.Payload)
 		case protocol.EventDaemonTaskAvailable:
 			var payload protocol.TaskAvailablePayload
 			if len(msg.Payload) > 0 {
