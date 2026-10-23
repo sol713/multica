@@ -97,6 +97,22 @@ class BrowserBridgeTest(unittest.IsolatedAsyncioTestCase):
         self.browser.close.assert_awaited_once_with(kill=True)
         self.assertEqual(len(self.bridge.sessions), 0)
 
+    async def test_scroll_preserves_coalesced_pixel_amount(self):
+        await self.call("start")
+        state = await self.call("handoff", params={"target": "user"})
+        self.browser.scroll = AsyncMock(return_value=SimpleNamespace(success=True))
+        await self.call("input", params={"kind": "scroll", "direction": "down", "amount": 73}, epoch=state["epoch"])
+        self.browser.scroll.assert_awaited_once_with(direction="down", amount=73)
+        for amount in (0, -2, 2001, "300", True):
+            with self.assertRaisesRegex(ValueError, "scroll"):
+                await self.call("input", params={"kind": "scroll", "direction": "down", "amount": amount}, epoch=state["epoch"])
+
+    async def test_expired_action_cannot_change_browser(self):
+        await self.call("start")
+        with self.assertRaisesRegex(ValueError, "expired"):
+            await self.call("navigate", "agent", {"url": "http://localhost"}, expires_at=int(time.time()*1000)-1)
+        self.browser.navigate.assert_not_awaited()
+
     async def test_idle_cleanup_and_session_limit(self):
         for i in range(MAX_SESSIONS):
             await self.bridge.call(dict(workspace_id=WORKSPACE, session_id=f"00000000-0000-0000-0000-{i+10:012d}", actor="user", action="start"))

@@ -175,7 +175,10 @@ class BrowserBridge:
             if not result.success:
                 raise ValueError(result.error or "Key input failed")
         elif kind == "scroll":
-            result = await browser.scroll(direction=params["direction"], amount=300)
+            amount = params.get("amount", 300)
+            if type(amount) is not int or not 0 < amount <= 2000 or params.get("direction") not in {"up", "down", "left", "right"}:
+                raise ValueError("Invalid scroll input")
+            result = await browser.scroll(direction=params["direction"], amount=amount)
             if not result.success:
                 raise ValueError(result.error or "Scroll failed")
         else:

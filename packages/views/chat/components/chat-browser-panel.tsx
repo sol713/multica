@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent, type WheelEvent } from "react";
 import { ArrowLeft, ArrowRight, Globe, RefreshCw, X, Plus, Hand, Play } from "lucide-react";
 import { useChatBrowser } from "@multica/core/chat/browser";
 import type { BrowserCommand } from "@multica/core/types/browser";
@@ -17,9 +17,20 @@ export function ChatBrowserPanel({ wsId, sessionId, onClose }: { wsId: string; s
   const [localError, setLocalError] = useState<string | null>(null);
   const queue = useRef<Promise<unknown>>(Promise.resolve());
   const queueSize = useRef(0);
+  const wheel = useRef({ x: 0, y: 0, busy: false, generation: 0, timer: undefined as ReturnType<typeof setTimeout> | undefined });
   const activeTab = state?.tabs.find((tab) => tab.active);
   const canControl = !!state?.active && state.control_owner === "user" && !snapshot.isError;
   useEffect(() => { setAddress(activeTab?.url ?? ""); }, [activeTab?.url]);
+  useEffect(() => {
+    const pending = wheel.current;
+    return () => {
+      clearTimeout(pending.timer);
+      pending.timer = undefined;
+      pending.x = pending.y = 0;
+      pending.busy = false;
+      pending.generation += 1;
+    };
+  }, [sessionId, state?.epoch, canControl]);
 
   async function send(action: BrowserCommand["action"], params?: Record<string, unknown>) {
     if (queueSize.current >= 32) { setLocalError(t(($) => $.browser.busy)); return false; }
@@ -49,6 +60,30 @@ export function ChatBrowserPanel({ wsId, sessionId, onClose }: { wsId: string; s
       const modifiers = [event.ctrlKey ? "Control" : "", event.metaKey ? "Meta" : "", event.altKey ? "Alt" : "", event.shiftKey ? "Shift" : ""].filter(Boolean);
       void send("input", { kind: "key", key: [...modifiers, event.key].join("+") });
     }
+  }
+
+  function scroll(event: WheelEvent) {
+    if (!canControl) return;
+    const pending = wheel.current;
+    const scale = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? state.height : 1;
+    pending.x = Math.max(-2000, Math.min(2000, pending.x + event.deltaX * scale));
+    pending.y = Math.max(-2000, Math.min(2000, pending.y + event.deltaY * scale));
+    const generation = pending.generation;
+    async function flush() {
+      pending.timer = undefined;
+      if (generation !== pending.generation) return;
+      const horizontal = Math.abs(pending.x) > Math.abs(pending.y);
+      const delta = horizontal ? pending.x : pending.y;
+      pending.x = pending.y = 0;
+      const amount = Math.round(Math.abs(delta));
+      if (!amount) return;
+      pending.busy = true;
+      await send("input", { kind: "scroll", direction: horizontal ? delta < 0 ? "left" : "right" : delta < 0 ? "up" : "down", amount });
+      if (generation !== pending.generation) return;
+      pending.busy = false;
+      if (pending.x || pending.y) pending.timer = setTimeout(flush, 100);
+    }
+    if (!pending.busy && pending.timer === undefined) pending.timer = setTimeout(flush, 100);
   }
 
   return (
@@ -109,7 +144,7 @@ export function ChatBrowserPanel({ wsId, sessionId, onClose }: { wsId: string; s
                     void send("input", { kind: "click", x: (event.clientX - rect.left) * state.width / rect.width, y: (event.clientY - rect.top) * state.height / rect.height });
                   }}
                   onKeyDown={press}
-                  onWheel={(event) => { if (canControl) void send("input", { kind: "scroll", direction: event.deltaY < 0 ? "up" : "down" }); }} />
+                  onWheel={scroll} />
               ) : <p role="status" className="p-4 text-caption text-muted-foreground">{t(($) => $.browser.connecting)}</p>}
             </div>
           ) : !snapshot.isError && (
