@@ -55,8 +55,33 @@ class BrowserBridgeTest(unittest.IsolatedAsyncioTestCase):
         async def navigate(url):
             return SimpleNamespace(success=True, content=url)
         self.browser.navigate = navigate
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(ValueError, "Unsupported browser parameters"):
             await self.call("navigate", "agent", {"profile": "other", "url": "https://example.com"})
+
+    async def test_agent_dispatches_only_parameters_for_selected_action(self):
+        params = dict(url="http://localhost:3000", ref="e1", selector="#message",
+                      text="hello", key="Enter", x=12, y=34, direction="down",
+                      amount=73, tab_id="tab-1")
+        actions = {
+            "navigate": {"url"}, "dom_tree": set(),
+            "click": {"ref", "selector", "x", "y"},
+            "type": {"text", "ref", "selector"},
+            "fill": {"text", "ref", "selector"}, "press": {"key"},
+            "scroll": {"direction", "amount"}, "go_back": set(),
+            "go_forward": set(), "reload": set(), "new_tab": {"url"},
+            "switch_tab": {"tab_id"}, "close_tab": {"tab_id"}, "list_tabs": set(),
+        }
+        for action, keys in actions.items():
+            with self.subTest(action=action):
+                method = AsyncMock(return_value=SimpleNamespace(success=True, content="ok"))
+                setattr(self.browser, action, method)
+                await self.call(action, "agent", params)
+                method.assert_awaited_once_with(**{key: params[key] for key in keys})
+
+    async def test_null_optional_parameters_keep_octop_defaults(self):
+        self.browser.scroll = AsyncMock(return_value=SimpleNamespace(success=True, content="ok"))
+        await self.call("scroll", "agent", {"direction": None, "amount": None, "url": None})
+        self.browser.scroll.assert_awaited_once_with()
 
     async def test_handoff_waits_for_inflight_agent_action(self):
         started, finish = asyncio.Event(), asyncio.Event()

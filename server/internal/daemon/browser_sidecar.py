@@ -21,11 +21,18 @@ WIDTH, HEIGHT = 1280, 800
 MAX_SESSIONS = 8
 IDLE_SECONDS = 15 * 60
 MAX_FRAME_BYTES = 2 * 1024 * 1024
-AGENT_ACTIONS = {
-    "navigate", "dom_tree", "click", "type", "fill", "press", "scroll",
-    "go_back", "go_forward", "reload", "new_tab", "switch_tab", "close_tab",
-    "list_tabs", "screenshot",
+ACTION_PARAMS = {
+    "navigate": {"url"}, "dom_tree": set(),
+    "click": {"ref", "selector", "x", "y"},
+    "type": {"text", "ref", "selector"},
+    "fill": {"text", "ref", "selector"}, "press": {"key"},
+    "scroll": {"direction", "amount"}, "go_back": set(),
+    "go_forward": set(), "reload": set(), "new_tab": {"url"},
+    "switch_tab": {"tab_id"}, "close_tab": {"tab_id"},
+    "list_tabs": set(), "screenshot": set(),
 }
+AGENT_ACTIONS = set(ACTION_PARAMS)
+TOOL_PARAMS = set().union(*ACTION_PARAMS.values())
 
 
 @dataclass
@@ -71,6 +78,11 @@ class BrowserBridge:
             raise ValueError("Invalid browser request")
         if actor == "agent" and action not in AGENT_ACTIONS:
             raise ValueError("Unsupported browser tool")
+        if action in ACTION_PARAMS:
+            if params.keys() - TOOL_PARAMS:
+                raise ValueError("Unsupported browser parameters")
+            params = {key: value for key, value in params.items()
+                      if key in ACTION_PARAMS[action] and value is not None}
         state = self.sessions.get(key)
         if state is None:
             if action == "snapshot":
