@@ -64,6 +64,28 @@ import { Callout } from "fumadocs-ui/components/callout";
 删除对话无法撤销，并会停止其中尚未结束的执行。暂时不需要时用归档。
 </Callout>
 
+## 共享浏览器（可选）
+
+在对话顶部打开「浏览器」，可观看智能体使用的 Octop Browser 实时画面。浏览器运行在 daemon 所在机器，能访问该机器的 localhost 页面。网页端和桌面端共用此面板，窄屏使用对话框。
+
+在 daemon 所在机器安装 Python 3.12+ 和 Chrome/Chromium，然后创建独立环境：
+
+```bash
+python3.12 -m venv ~/.multica/browser-venv
+~/.multica/browser-venv/bin/python -m pip install octop-browser==1.0.0
+export MULTICA_BROWSER_PYTHON="$HOME/.multica/browser-venv/bin/python"
+export MULTICA_BROWSER_ENABLED=1
+multica daemon
+```
+
+Windows 可用 `py -3.12 -m venv "$HOME/.multica/browser-venv"` 创建环境，使用其中的 `Scripts/python.exe` 安装依赖，并在重启 daemon 前设置上述两个环境变量。若未自动找到 Chrome，可用 `BROWSER_USE_CHROME_BIN` 指定可执行文件。
+
+先发一条消息，使对话绑定运行时。启用后，Claude、Codex、DSH、Hermes、Qoder、MCode 和支持 HTTP MCP 的 OpenCode 运行时会在**新一轮执行**中获得浏览器工具。请让智能体使用 `multica-browser`，而不是另外配置的浏览器工具；已经开始的执行不会自动增加工具。
+
+「接管」会等待当前浏览器操作结束，再阻止智能体继续调用共享浏览器工具。接管后可点击画面、输入网址，或使用画面下方的输入框粘贴中文等文字。「交还 Agent」后，智能体可继续使用同一浏览器。收起面板不会交还控制权或停止浏览器；「停止浏览器」会关闭 Chrome，但保留登录资料。
+
+登录态保存在 daemon 机器的 `~/.multica/browser-profiles`，按工作区和对话隔离。画面和输入经 Multica 已鉴权的 daemon 连接转发，不公开 CDP 端口。每个 daemon 最多保留 8 个浏览器会话，无活动 15 分钟后关闭；daemon 断线会显示错误。接管仅约束共享的 `multica-browser` 工具，不是对终端命令或第三方浏览器工具的沙箱限制。此版本在面板打开时轮询画面（最高每秒 2 帧），支持点击、输入、按键、滚动和标签页，暂不支持文件上传、拖拽或音视频流。
+
 ## 接下来
 
 - [分配任务给智能体](/assigning-issues) — 把讨论转成可追踪的工作。

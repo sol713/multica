@@ -384,6 +384,7 @@ type repoCacheBackend interface {
 
 // Daemon is the local agent runtime that polls for and executes tasks.
 type Daemon struct {
+	browser    browserProcess
 	cfg        Config
 	client     *Client
 	repoCache  repoCacheBackend
@@ -2073,6 +2074,7 @@ func (d *Daemon) clearWSHeartbeatAcks() {
 
 // Run starts the daemon: resolves auth, registers runtimes, then polls for tasks.
 func (d *Daemon) Run(ctx context.Context) error {
+	defer d.browser.Close()
 	// Wrap context so handleUpdate can cancel the daemon for restart.
 	ctx, cancel := context.WithCancel(ctx)
 	d.cancelFunc = cancel
@@ -7917,6 +7919,20 @@ func (d *Daemon) runTask(ctx context.Context, task Task, provider string, slot i
 		} else {
 			remoteMCPConfig = merged
 		}
+	}
+	browserConfig, browserMCP, browserErr := d.startChatBrowserMCP(ctx, task, provider)
+	if browserErr != nil {
+		taskLog.Warn("browser tools unavailable", "error", browserErr)
+	}
+	if browserMCP != nil {
+		defer browserMCP.Close()
+	}
+	if len(browserConfig) > 0 {
+		merged, mergeErr := mergeTaskRemoteMCPConfig(remoteMCPConfig, browserConfig)
+		if mergeErr != nil {
+			return TaskResult{}, fmt.Errorf("merge browser MCP configuration: %w", mergeErr)
+		}
+		remoteMCPConfig = merged
 	}
 	if task.Agent != nil {
 		agentMcpConfig = task.Agent.McpConfig

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Archive, ArchiveRestore, MoreHorizontal, Pencil, Trash2, UserRound } from "lucide-react";
+import { Archive, ArchiveRestore, MoreHorizontal, Pencil, Trash2, UserRound, PanelRight } from "lucide-react";
 import { Button } from "@multica/ui/components/ui/button";
 import {
   DropdownMenu,
@@ -43,6 +43,8 @@ export function ChatSessionHeader({
   session,
   agent,
   onArchive,
+  onToggleBrowser,
+  browserOpen,
 }: {
   session: ChatSession;
   agent: Agent | null;
@@ -50,6 +52,8 @@ export function ChatSessionHeader({
   // next chat on desktop, back to the list on mobile), so the parent owns it —
   // see ChatPage.handleArchive. Falls back to a plain status flip if unwired.
   onArchive?: (session: ChatSession) => void;
+  onToggleBrowser?: () => void;
+  browserOpen?: boolean;
 }) {
   const { t } = useT("chat");
   const wsPaths = useWorkspacePaths();
@@ -207,6 +211,11 @@ export function ChatSessionHeader({
         )}
       </div>
 
+      {onToggleBrowser && (
+        <Button variant="ghost" size="icon-sm" aria-label={t(($) => $.browser.title)} aria-pressed={browserOpen} onClick={onToggleBrowser}>
+          <PanelRight className="h-4 w-4" />
+        </Button>
+      )}
       <DropdownMenu>
         <DropdownMenuTrigger
           render={<Button variant="ghost" size="icon-sm" className="text-muted-foreground" />}

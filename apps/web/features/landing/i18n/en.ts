@@ -73,7 +73,7 @@ export function createEnDict(
         {
           title: "Real-time progress streaming",
           description:
-            "WebSocket-powered live updates. Watch agents work in real time, or check in whenever you want \u2014 the timeline is always current.",
+            "WebSocket-powered live updates. Enable Octop Browser in chat to watch the daemon-local browser, take control, and return it to the agent.",
         },
       ],
     },

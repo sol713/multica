@@ -64,6 +64,28 @@ If a conversation is bound to an external channel (such as Slack), archiving bre
 Deleting a conversation cannot be undone and stops any runs in it that haven't finished. Archive instead when you just don't need it for now.
 </Callout>
 
+## Shared browser (optional)
+
+Open **Browser** in a conversation header to watch the agent's Octop Browser viewport. The browser runs on the daemon's machine, so it can reach that machine's localhost pages. Web and desktop share this panel; compact screens open it in a dialog.
+
+Install Python 3.12+ and Chrome/Chromium on the daemon machine, then create a dedicated environment:
+
+```bash
+python3.12 -m venv ~/.multica/browser-venv
+~/.multica/browser-venv/bin/python -m pip install octop-browser==1.0.0
+export MULTICA_BROWSER_PYTHON="$HOME/.multica/browser-venv/bin/python"
+export MULTICA_BROWSER_ENABLED=1
+multica daemon
+```
+
+Windows users can create the environment with `py -3.12 -m venv "$HOME/.multica/browser-venv"`, install with its `Scripts/python.exe`, and set the two environment variables before restarting the daemon. If Chrome is not auto-detected, set `BROWSER_USE_CHROME_BIN` to its executable.
+
+Send a message first to bind the chat to a runtime. Browser tools are injected into **new turns** for Claude, Codex, DSH, Hermes, Qoder, MCode and OpenCode runtimes that support HTTP MCP. Ask the agent to use `multica-browser` rather than a separately configured browser tool. An agent already running when this feature is enabled needs a new turn.
+
+**Take control** waits for any current browser action to finish, then prevents further shared-browser tool calls by the agent. Click the viewport, use the address bar or paste text using the input below the viewport. **Return to agent** lets it continue in the same browser. Hiding the panel does not return control or stop the browser; **Stop browser** closes Chrome while retaining its profile.
+
+Profiles and login state stay under `~/.multica/browser-profiles`, isolated by workspace and chat. Screenshots and input pass through Multica's authenticated daemon connection, not a public CDP endpoint. At most eight browser sessions remain open per daemon; sessions without activity are closed after 15 minutes. A disconnected daemon shows an error, not a live viewport. Existing agent tools, terminal commands and third-party browser integrations are not sandboxed by this control toggle; it governs the shared `multica-browser` tool only. Browser viewport updates are polled while the panel is open (up to 2 fps); this initial version supports click, text, keyboard, scrolling and tabs, not file upload, drag-and-drop, audio or video streaming.
+
 ## Next steps
 
 - [Assign issues to agents](/assigning-issues) — turn a discussion into trackable work.

@@ -1,4 +1,6 @@
 import type { ZodType } from "zod";
+import type { BrowserCommand, BrowserSnapshot } from "../types/browser";
+import { BrowserSnapshotSchema, EMPTY_BROWSER_SNAPSHOT } from "./schemas";
 import type { IssueWakeup, IssueWakeupInput, IssueWakeupSummaryRow, PausedWakeup, SystemWakeup, WakeupRun, WorkspaceSystemWakeup } from "../types/issue-wakeup";
 import type { WorkspaceWakeupPage, WorkspaceWakeupFilters } from "../types/issue-wakeup";
 import { WorkspaceWakeupPageSchema, IssueWakeupSchema, IssueWakeupSummaryRowSchema, PausedWakeupSchema, SystemWakeupSchema, WakeupRunSchema, WorkspaceSystemWakeupSchema } from "./schemas";
@@ -3666,6 +3668,15 @@ export class ApiClient {
     return parseWithFallback(raw, ChatSessionSchema, EMPTY_CHAT_SESSION, {
       endpoint: "GET /api/chat/sessions/:id",
     });
+  }
+
+  async getChatBrowser(sessionId: string, signal?: AbortSignal): Promise<BrowserSnapshot> {
+    const raw = await this.fetch<unknown>(`/api/chat/sessions/${sessionId}/browser`, { signal });
+    return parseWithFallback(raw, BrowserSnapshotSchema, EMPTY_BROWSER_SNAPSHOT, { endpoint: "GET /api/chat/sessions/:id/browser" });
+  }
+
+  async sendChatBrowserCommand(sessionId: string, command: BrowserCommand): Promise<void> {
+    await this.fetch(`/api/chat/sessions/${sessionId}/browser`, { method: "POST", body: JSON.stringify(command) });
   }
 
   async createChatSession(

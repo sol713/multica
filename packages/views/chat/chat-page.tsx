@@ -11,6 +11,9 @@ import {
   ResizableHandle,
 } from "@multica/ui/components/ui/resizable";
 import { useIsCompact } from "@multica/ui/hooks/use-mobile";
+import { Dialog, DialogContent, DialogTitle } from "@multica/ui/components/ui/dialog";
+import { useWorkspaceId } from "@multica/core/hooks";
+import { ChatBrowserPanel } from "./components/chat-browser-panel";
 import { useRequiredWorkspaceSlug, useWorkspacePaths } from "@multica/core/paths";
 import { getCurrentSlug } from "@multica/core/platform";
 import { useChatStore } from "@multica/core/chat";
@@ -67,10 +70,16 @@ export function ChatPage() {
   // can rehydrate the store before this page observes the destination URL.
   const isCurrentChatRoute = pathname === wsPaths.chat();
   const isCompact = useIsCompact();
+  const wsId = useWorkspaceId();
+  const [browserSessionId, setBrowserSessionId] = useState<string | null>(null);
 
   const c = useChatController({
     isActive: isCurrentChatRoute && getCurrentSlug() === workspaceSlug,
   });
+  const browserOpen = !!c.activeSessionId && browserSessionId === c.activeSessionId;
+  const browserPanel = browserOpen && c.activeSessionId ? (
+    <ChatBrowserPanel key={`${wsId}:${c.activeSessionId}`} wsId={wsId} sessionId={c.activeSessionId} onClose={() => setBrowserSessionId(null)} />
+  ) : null;
   const { data: quickActionsPending = null } = useQuery(
     chatQuickActionsPendingOptions(c.activeSessionId ?? ""),
   );
@@ -261,6 +270,8 @@ export function ChatPage() {
           session={c.currentSession}
           agent={c.activeAgent}
           onArchive={handleArchive}
+          browserOpen={browserOpen}
+          onToggleBrowser={() => setBrowserSessionId(browserOpen ? null : c.activeSessionId)}
         />
       )}
       {c.showSkeleton ? (
@@ -379,6 +390,12 @@ export function ChatPage() {
             </Button>
           </div>
           {conversation}
+          <Dialog open={browserOpen} onOpenChange={(open) => { if (!open) setBrowserSessionId(null); }}>
+            <DialogContent showCloseButton={false} className="h-[85dvh] max-w-none gap-0 overflow-hidden p-0 sm:max-w-3xl">
+              <DialogTitle className="sr-only">{t(($) => $.browser.title)}</DialogTitle>
+              {browserPanel}
+            </DialogContent>
+          </Dialog>
         </div>
       );
     }
@@ -418,7 +435,13 @@ export function ChatPage() {
       <ResizablePanel id="detail" minSize="40%">
         <div className="flex flex-col min-h-0 h-full">
           {hasTarget ? (
-            conversation
+            browserOpen ? (
+              <ResizablePanelGroup orientation="horizontal" className="flex-1 min-h-0">
+                <ResizablePanel id="conversation" minSize="30%" defaultSize="50%">{conversation}</ResizablePanel>
+                <ResizableHandle />
+                <ResizablePanel id="browser" minSize={320} defaultSize="50%">{browserPanel}</ResizablePanel>
+              </ResizablePanelGroup>
+            ) : conversation
           ) : (
             <div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground">
               <MessageSquare className="h-10 w-10 text-faint-foreground" />

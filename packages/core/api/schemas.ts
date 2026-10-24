@@ -1,4 +1,18 @@
 import { z } from "zod";
+import type { BrowserSnapshot } from "../types/browser";
+
+export const BrowserSnapshotSchema = z.object({
+  enabled: z.boolean().default(false),
+  active: z.boolean().default(false),
+  control_owner: z.string().default("agent"),
+  epoch: z.number().default(0),
+  width: z.number().positive().default(1280),
+  height: z.number().positive().default(800),
+  frame: z.string().default(""),
+  tabs: z.array(z.object({ tab_id: z.string(), title: z.string().default(""), url: z.string().default(""), active: z.boolean().default(false) })).default([]),
+});
+
+export const EMPTY_BROWSER_SNAPSHOT: BrowserSnapshot = { enabled: false, active: false, control_owner: "agent", epoch: 0, width: 1280, height: 800, frame: "", tabs: [] };
 import { normalizeIssueStatusCategory } from "../issues/config/status";
 import type {
   AgentBuilderRuntimeSwitch,

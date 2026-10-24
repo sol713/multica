@@ -310,7 +310,9 @@ type MessageKindRecorder interface {
 // Hub keeps daemon WebSocket connections indexed by runtime ID. Messages are
 // best-effort wakeup hints; the daemon still uses HTTP claim for correctness.
 type Hub struct {
-	upgrader websocket.Upgrader
+	browserPending map[string]browserPendingCall
+	browserRelay   browserRelayPublisher
+	upgrader       websocket.Upgrader
 
 	mu          sync.RWMutex
 	clients     map[*client]bool
@@ -627,6 +629,16 @@ func (h *Hub) DeliverDaemonRuntime(scopeID string, frame []byte, eventID string)
 			M.WakeupDeliveredHit.Add(1)
 		} else if !deduped {
 			M.WakeupDeliveredMiss.Add(1)
+		}
+	case protocol.EventDaemonBrowserRequest:
+		var request protocol.BrowserRequest
+		if json.Unmarshal(msg.Payload, &request) == nil && request.RuntimeID == scopeID {
+			h.notifyFrame(request.RuntimeID, frame, eventID)
+		}
+	case protocol.EventDaemonBrowserResponse:
+		var response protocol.BrowserResponse
+		if json.Unmarshal(msg.Payload, &response) == nil && response.RuntimeID == scopeID {
+			h.deliverBrowser(response)
 		}
 	case protocol.EventDaemonRuntimeProfilesChanged:
 		var payload protocol.RuntimeProfilesChangedPayload
@@ -948,7 +960,7 @@ func (c *client) readPump() {
 
 	// Read limit sized for daemon:rpc_request frames carrying a machine's full
 	// runtime_id set (MUL-4257), well above the tiny heartbeat/wakeup frames.
-	c.conn.SetReadLimit(64 * 1024)
+	c.conn.SetReadLimit(3 << 20)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.conn.SetPongHandler(func(string) error {
 		c.conn.SetReadDeadline(time.Now().Add(pongWait))
@@ -984,6 +996,8 @@ func (c *client) handleFrame(raw []byte) {
 		rec.RecordDaemonWSMessageReceived(kind)
 	}
 	switch msg.Type {
+	case protocol.EventDaemonBrowserResponse:
+		c.handleBrowserResponse(msg.Payload)
 	case protocol.EventDaemonHeartbeat:
 		c.handleHeartbeatFrame(msg.Payload)
 	case protocol.EventDaemonRPCRequest:

@@ -14,6 +14,7 @@ import {
 } from "../navigation";
 
 const TEST_RESOURCES = { en: { common: enCommon, chat: enChat } };
+vi.mock("@multica/core/hooks", () => ({ useWorkspaceId: () => "workspace-1" }));
 
 // These tests target the page-level URL wiring (`?agent=` / `?session=`), so
 // the conversation internals are stubbed and the controller is replaced with
