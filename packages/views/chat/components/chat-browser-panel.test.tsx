@@ -48,6 +48,17 @@ describe("chat shared browser", () => {
     expect(api.sendChatBrowserCommand).toHaveBeenCalledWith("chat",{action:"input",params:{kind:"scroll",direction:"down",amount:100},epoch:7});
   });
 
+  it("inserts text by clicking Insert and clears it after success", async () => {
+    mount();
+    const input = await screen.findByRole("textbox", { name: enChat.browser.text_input });
+    fireEvent.change(input, { target: { value: "human-paste" } });
+    fireEvent.click(screen.getByRole("button", { name: "Insert" }));
+    await waitFor(() => expect(api.sendChatBrowserCommand).toHaveBeenCalledWith("chat", {
+      action: "input", params: { kind: "text", text: "human-paste" }, epoch: 7,
+    }));
+    await waitFor(() => expect(input).toHaveValue(""));
+  });
+
   it("discards pending wheel input when the panel closes", async () => {
     const view = mount();
     const viewport = await screen.findByRole("img");

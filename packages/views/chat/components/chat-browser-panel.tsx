@@ -160,7 +160,7 @@ export function ChatBrowserPanel({ wsId, sessionId, onClose }: { wsId: string; s
           {state.control_owner === "user" ? (
             <form className="flex items-center gap-2" onSubmit={(event) => { event.preventDefault(); if (canControl && input) { void send("input", { kind: "text", text: input }).then((ok) => { if (ok) setInput(""); }); } }}>
               <Input aria-label={t(($) => $.browser.text_input)} placeholder={t(($) => $.browser.text_input)} value={input} onChange={(event) => setInput(event.target.value)} disabled={!canControl} maxLength={10000} />
-              <Button variant="outline" size="sm" disabled={!canControl || !input}>{t(($) => $.browser.type_text)}</Button>
+              <Button type="submit" variant="outline" size="sm" disabled={!canControl || !input}>{t(($) => $.browser.type_text)}</Button>
               <Button type="button" variant="ghost" size="xs" disabled={!canControl} onClick={() => void send("input", { kind:"key", key:"Tab" })}>{t(($) => $.browser.tab_key)}</Button>
             </form>
           ) : <p className="text-caption text-muted-foreground">{t(($) => $.browser.observe)}</p>}
